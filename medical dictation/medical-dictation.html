@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Dictation System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .api-config {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .api-config h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #34495e;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #27ae60, #219a52);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .status.listening {
+            background: #d5f4e6;
+            color: #27ae60;
+            border: 2px solid #27ae60;
+        }
+
+        .status.stopped {
+            background: #fadbd8;
+            color: #e74c3c;
+            border: 2px solid #e74c3c;
+        }
+
+        .status.processing {
+            background: #fef9e7;
+            color: #f39c12;
+            border: 2px solid #f39c12;
+        }
+
+        .transcription-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .transcription-box {
+            background: #fff;
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 300px;
+        }
+
+        .transcription-box h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .transcription-content {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #2c3e50;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .processing-indicator {
+            display: none;
+            text-align: center;
+            color: #3498db;
+            font-style: italic;
+        }
+
+        .processing-indicator.show {
+            display: block;
+        }
+
+        .wave-animation {
+            display: inline-block;
+            animation: wave 1.5s ease-in-out infinite;
+        }
+
+        @keyframes wave {
+            0%, 60%, 100% { transform: initial; }
+            30% { transform: translateY(-10px); }
+        }
+
+        .confidence-meter {
+            background: #ecf0f1;
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e74c3c, #f39c12, #27ae60);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        @media (max-width: 768px) {
+            .transcription-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Medical Dictation System</h1>
+            <p>Powered by Web Speech API & Gemini AI</p>
+        </div>
+
+        <div class="api-config">
+            <h3>🔑 API Configuration</h3>
+            <div class="form-group">
+                <label for="geminiKey">Gemini API Key:</label>
+                <input type="password" id="geminiKey" placeholder="Enter your Gemini API key">
+            </div>
+        </div>
+
+        <div class="api-config">
+            <h3>🔧 Troubleshooting</h3>
+            <div id="systemCheck">
+                <p><strong>Browser Support:</strong> <span id="browserSupport">Checking...</span></p>
+                <p><strong>HTTPS Status:</strong> <span id="httpsStatus">Checking...</span></p>
+                <p><strong>Microphone Permission:</strong> <span id="micPermission">Checking...</span></p>
+            </div>
+            <button id="testMicBtn" class="btn btn-primary" style="margin-top: 10px;">🎤 Test Microphone</button>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn" class="btn btn-primary">🎤 Start Recording</button>
+            <button id="stopBtn" class="btn btn-danger" disabled>⏹️ Stop Recording</button>
+            <button id="processBtn" class="btn btn-success" disabled>🧠 Process with Gemini</button>
+        </div>
+
+        <div id="status" class="status stopped">
+            📴 Ready to start recording
+        </div>
+
+        <div class="transcription-section">
+            <div class="transcription-box">
+                <h3>🎙️ Raw Transcription</h3>
+                <div id="rawTranscription" class="transcription-content">
+                    Speak into your microphone to see the transcription appear here...
+                </div>
+                <div class="confidence-meter">
+                    <div id="confidenceFill" class="confidence-fill"></div>
+                </div>
+            </div>
+            
+            <div class="transcription-box">
+                <h3>🧠 AI-Enhanced Medical Note</h3>
+                <div id="processedTranscription" class="transcription-content">
+                    Click "Process with Gemini" to enhance your transcription with medical formatting and terminology...
+                </div>
+                <div id="processingIndicator" class="processing-indicator">
+                    <span class="wave-animation">🤖</span> Processing with Gemini AI...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class MedicalDictationSystem {
+            constructor() {
+                this.recognition = null;
+                this.isRecording = false;
+                this.transcript = '';
+                this.geminiApiKey = '';
+                
+                this.initElements();
+                this.checkSystemCompatibility();
+                this.initSpeechRecognition();
+                this.bindEvents();
+            }
+
+            initElements() {
+                this.startBtn = document.getElementById('startBtn');
+                this.stopBtn = document.getElementById('stopBtn');
+                this.processBtn = document.getElementById('processBtn');
+                this.testMicBtn = document.getElementById('testMicBtn');
+                this.status = document.getElementById('status');
+                this.rawTranscription = document.getElementById('rawTranscription');
+                this.processedTranscription = document.getElementById('processedTranscription');
+                this.geminiKeyInput = document.getElementById('geminiKey');
+                this.confidenceFill = document.getElementById('confidenceFill');
+                this.processingIndicator = document.getElementById('processingIndicator');
+                this.browserSupport = document.getElementById('browserSupport');
+                this.httpsStatus = document.getElementById('httpsStatus');
+                this.micPermission = document.getElementById('micPermission');
+            }
+
+            initSpeechRecognition() {
+                // Check for speech recognition support
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    this.updateStatus('stopped', '❌ Speech recognition not supported. Please use Chrome, Edge, or Safari.');
+                    this.startBtn.disabled = true;
+                    return;
+                }
+
+                try {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    
+                    // Configure recognition with better settings
+                    this.recognition.continuous = true;
+                    this.recognition.interimResults = true;
+                    this.recognition.lang = 'en-US';
+                    this.recognition.maxAlternatives = 1;
+                    
+                    // Event handlers
+                    this.recognition.onstart = () => {
+                        console.log('Speech recognition started');
+                        this.isRecording = true;
+                        this.updateStatus('listening', '🎤 Listening... Speak clearly');
+                        this.startBtn.disabled = true;
+                        this.stopBtn.disabled = false;
+                    };
+
+                    this.recognition.onresult = (event) => {
+                        let interimTranscript = '';
+                        let finalTranscript = this.transcript;
+
+                        for (let i = event.resultIndex; i < event.results.length; i++) {
+                            const transcript = event.results[i][0].transcript;
+                            const confidence = event.results[i][0].confidence || 0.8;
+
+                            if (event.results[i].isFinal) {
+                                finalTranscript += transcript + ' ';
+                                this.updateConfidence(confidence);
+                                console.log('Final transcript:', transcript, 'Confidence:', confidence);
+                            } else {
+                                interimTranscript += transcript;
+                            }
+                        }
+
+                        this.transcript = finalTranscript;
+                        this.rawTranscription.textContent = this.transcript + (interimTranscript ? ' [' + interimTranscript + ']' : '');
+                    };
+
+                    this.recognition.onerror = (event) => {
+                        console.error('Speech recognition error:', event.error, event);
+                        
+                        let errorMessage = '';
+                        switch(event.error) {
+                            case 'no-speech':
+                                errorMessage = '❌ No speech detected. Please try again.';
+                                break;
+                            case 'audio-capture':
+                                errorMessage = '❌ Microphone not accessible. Check permissions.';
+                                break;
+                            case 'not-allowed':
+                                errorMessage = '❌ Microphone permission denied. Please allow access.';
+                                break;
+                            case 'network':
+                                errorMessage = '❌ Network error. Check your internet connection.';
+                                break;
+                            case 'aborted':
+                                errorMessage = '📴 Recording aborted.';
+                                break;
+                            default:
+                                errorMessage = `❌ Speech recognition error: ${event.error}`;
+                        }
+                        
+                        this.updateStatus('stopped', errorMessage);
+                        this.resetButtons();
+                        
+                        // Auto-retry for certain errors
+                        if (event.error === 'no-speech' && this.isRecording) {
+                            setTimeout(() => {
+                                if (this.isRecording) {
+                                    console.log('Auto-restarting recognition...');
+                                    this.recognition.start();
+                                }
+                            }, 1000);
+                        }
+                    };
+
+                    this.recognition.onend = () => {
+                        console.log('Speech recognition ended');
+                        this.isRecording = false;
+                        this.updateStatus('stopped', '📴 Recording stopped');
+                        this.resetButtons();
+                        if (this.transcript.trim()) {
+                            this.processBtn.disabled = false;
+                        }
+                    };
+                    
+                } catch (error) {
+                    console.error('Failed to initialize speech recognition:', error);
+                    this.updateStatus('stopped', '❌ Failed to initialize speech recognition.');
+                    this.startBtn.disabled = true;
+                }
+            }
+
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => this.startRecording());
+                this.stopBtn.addEventListener('click', () => this.stopRecording());
+                this.processBtn.addEventListener('click', () => this.processWithGemini());
+                this.testMicBtn.addEventListener('click', () => this.testMicrophone());
+                this.geminiKeyInput.addEventListener('input', (e) => {
+                    this.geminiApiKey = e.target.value.trim();
+                });
+            }
+
+            checkSystemCompatibility() {
+                // Check browser support
+                const hasSupport = ('webkitSpeechRecognition' in window) || ('SpeechRecognition' in window);
+                this.browserSupport.textContent = hasSupport ? '✅ Supported' : '❌ Not Supported';
+                this.browserSupport.style.color = hasSupport ? 'green' : 'red';
+
+                // Check HTTPS
+                const isHttps = location.protocol === 'https:' || location.hostname === 'localhost';
+                this.httpsStatus.textContent = isHttps ? '✅ Secure' : '❌ Requires HTTPS';
+                this.httpsStatus.style.color = isHttps ? 'green' : 'red';
+
+                // Check microphone permission
+                if (navigator.permissions) {
+                    navigator.permissions.query({ name: 'microphone' }).then(permissionStatus => {
+                        this.updateMicPermissionStatus(permissionStatus.state);
+                        permissionStatus.addEventListener('change', () => {
+                            this.updateMicPermissionStatus(permissionStatus.state);
+                        });
+                    });
+                } else {
+                    this.micPermission.textContent = '❓ Unknown (test required)';
+                    this.micPermission.style.color = 'orange';
+                }
+            }
+
+            updateMicPermissionStatus(state) {
+                let text, color;
+                switch (state) {
+                    case 'granted':
+                        text = '✅ Granted';
+                        color = 'green';
+                        break;
+                    case 'denied':
+                        text = '❌ Denied';
+                        color = 'red';
+                        break;
+                    case 'prompt':
+                        text = '❓ Will prompt';
+                        color = 'orange';
+                        break;
+                    default:
+                        text = '❓ Unknown';
+                        color = 'orange';
+                }
+                this.micPermission.textContent = text;
+                this.micPermission.style.color = color;
+            }
+
+            async testMicrophone() {
+                try {
+                    this.testMicBtn.disabled = true;
+                    this.testMicBtn.textContent = '🔄 Testing...';
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    // Test successful
+                    this.updateStatus('stopped', '✅ Microphone test successful!');
+                    this.updateMicPermissionStatus('granted');
+                    
+                    // Stop the stream
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                } catch (error) {
+                    console.error('Microphone test failed:', error);
+                    this.updateStatus('stopped', `❌ Microphone test failed: ${error.message}`);
+                    this.updateMicPermissionStatus('denied');
+                } finally {
+                    this.testMicBtn.disabled = false;
+                    this.testMicBtn.textContent = '🎤 Test Microphone';
+                }
+            }
+
+            startRecording() {
+                if (!this.recognition) {
+                    this.updateStatus('stopped', '❌ Speech recognition not initialized.');
+                    return;
+                }
+
+                if (this.isRecording) {
+                    console.log('Already recording, ignoring start request');
+                    return;
+                }
+
+                // Check microphone permissions first
+                navigator.permissions.query({ name: 'microphone' }).then(permissionStatus => {
+                    console.log('Microphone permission:', permissionStatus.state);
+                    
+                    if (permissionStatus.state === 'denied') {
+                        this.updateStatus('stopped', '❌ Microphone access denied. Please allow microphone permissions in your browser settings.');
+                        return;
+                    }
+                    
+                    // Clear previous transcript
+                    this.transcript = '';
+                    this.rawTranscription.textContent = 'Starting recognition...';
+                    this.processBtn.disabled = true;
+                    
+                    try {
+                        console.log('Starting speech recognition...');
+                        this.recognition.start();
+                    } catch (error) {
+                        console.error('Error starting recognition:', error);
+                        this.updateStatus('stopped', '❌ Failed to start recording. Try refreshing the page.');
+                        this.resetButtons();
+                    }
+                }).catch(error => {
+                    console.warn('Permission API not supported, proceeding anyway');
+                    // Fallback for browsers that don't support permissions API
+                    this.transcript = '';
+                    this.rawTranscription.textContent = 'Starting recognition...';
+                    this.processBtn.disabled = true;
+                    
+                    try {
+                        this.recognition.start();
+                    } catch (error) {
+                        console.error('Error starting recognition:', error);
+                        this.updateStatus('stopped', '❌ Failed to start recording. Try refreshing the page.');
+                        this.resetButtons();
+                    }
+                });
+            }
+
+            stopRecording() {
+                if (this.recognition && this.isRecording) {
+                    this.recognition.stop();
+                }
+            }
+
+            updateStatus(type, message) {
+                this.status.className = `status ${type}`;
+                this.status.textContent = message;
+            }
+
+            updateConfidence(confidence) {
+                if (confidence) {
+                    const percentage = Math.round(confidence * 100);
+                    this.confidenceFill.style.width = `${percentage}%`;
+                }
+            }
+
+            resetButtons() {
+                this.startBtn.disabled = false;
+                this.stopBtn.disabled = true;
+            }
+
+            async processWithGemini() {
+                if (!this.geminiApiKey) {
+                    alert('Please enter your Gemini API key first.');
+                    return;
+                }
+
+                if (!this.transcript.trim()) {
+                    alert('No transcription available to process.');
+                    return;
+                }
+
+                this.processBtn.disabled = true;
+                this.processingIndicator.classList.add('show');
+                this.updateStatus('processing', '🧠 Processing with Gemini AI...');
+
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${this.geminiApiKey}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{
+                                    text: `Please format the following medical dictation into a professional medical note. Correct any medical terminology, add appropriate structure with sections like Chief Complaint, History of Present Illness, Physical Examination, Assessment, and Plan as appropriate. Also correct any obvious transcription errors and standardize medical abbreviations:
+
+"${this.transcript}"`
+                                }]
+                            }],
+                            generationConfig: {
+                                temperature: 0.1,
+                                topK: 1,
+                                topP: 1,
+                                maxOutputTokens: 2048,
+                            }
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API request failed: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                        const processedText = data.candidates[0].content.parts[0].text;
+                        this.processedTranscription.textContent = processedText;
+                        this.updateStatus('stopped', '✅ Processing completed successfully');
+                    } else {
+                        throw new Error('No response content received from Gemini');
+                    }
+
+                } catch (error) {
+                    console.error('Gemini API error:', error);
+                    this.processedTranscription.textContent = `Error processing with Gemini: ${error.message}`;
+                    this.updateStatus('stopped', '❌ Processing failed');
+                } finally {
+                    this.processingIndicator.classList.remove('show');
+                    this.processBtn.disabled = false;
+                }
+            }
+        }
+
+        // Initialize the system when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new MedicalDictationSystem();
+        });
+    </script>
+</body>
+</html>
